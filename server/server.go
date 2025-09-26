@@ -2,12 +2,12 @@ package server
 
 import (
 	"fmt"
-	"go-final-project/pkg/api"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
 	"time"
+	"tire-pepair-record-service/pkg/api"
 )
 
 type Server struct {

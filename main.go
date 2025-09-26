@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"tire-pepair-record-service/pkg/api"
@@ -10,9 +9,9 @@ import (
 )
 
 const (
-	portDefault      int    = 7540
-	dbDefault        string = "tire_service.db"
-	telegramTokenEnv        = "8242376149:AAExwkTZRxjVIC9ztWYoYU2qHwmtlgh_1g0"
+	portDefault int    = 7540
+	dbDefault   string = "tire_service.db"
+	//telegramTokenEnv        = ""
 )
 
 func main() {
@@ -32,16 +31,4 @@ func main() {
 			logger.Fatal("FATAL: error while server start: ", err)
 		}
 	}()
-
-	// Запуск Telegram бота
-	token := telegramTokenEnv
-	if token == "" {
-		logger.Println("WARN: Telegram bot token not set, bot will not start")
-	} else {
-		bot, err := NewTelegramBot(token, logger, fmt.Sprintf("http://localhost:%d", portDefault))
-		if err != nil {
-			logger.Fatalf("FATAL: failed to create telegram bot: %v", err)
-		}
-		bot.Start()
-	}
 }

@@ -7,8 +7,6 @@ import (
 	"net/http"
 )
 
-const dateForm string = "20060102"
-
 func writeJson(res http.ResponseWriter, status int, data interface{}) {
 	res.Header().Set("Content-Type", "application/json")
 	res.WriteHeader(status)
@@ -44,7 +42,6 @@ func taskHandler(res http.ResponseWriter, req *http.Request, logger *log.Logger)
 }
 
 func Init(mux *http.ServeMux, logger *log.Logger) {
-	mux.HandleFunc("/api/nextdate", func(res http.ResponseWriter, req *http.Request) { nextDateHandler(res, req, logger) })
 	mux.HandleFunc("/api/signin", func(res http.ResponseWriter, req *http.Request) { signin(res, req, logger) })
 
 	taskHandlerWrapper := func(res http.ResponseWriter, req *http.Request) { taskHandler(res, req, logger) }
@@ -55,3 +52,18 @@ func Init(mux *http.ServeMux, logger *log.Logger) {
 	mux.HandleFunc("/api/tasks", auth(tasksHandlerWrapper, logger))
 	mux.HandleFunc("/api/task/done", auth(taskDoneHandlerWrapper, logger))
 }
+
+/*
+GetAvailableSlots возвращает доступные временные слоты на указанную дату
+AddRecordHandler обработчик добавления новой записи
+UpdateRecordHandler обработчик обновления записи
+DeleteRecord удаляет запись по ID
+UpdateRecordStatus обновляет статус записи по ID
+GetRecordsByDate возвращает все записи на определенную дату (исключая отмененные)
+GetTodayRecords возвращает все записи на сегодня с возможностью фильтрации по статусу
+GetRecordByID возвращает запись по ID
+GetAllRecords возвращает все записи (для администрирования)
+GetRecordsByStatus возвращает записи по статусу
+GetPendingRecords возвращает записи в статусе ожидания
+GetActiveRecords возвращает активные записи (не завершенные и не отмененные)
+*/

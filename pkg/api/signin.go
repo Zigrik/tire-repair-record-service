@@ -18,7 +18,7 @@ func SetPassword() {
 }
 
 func createToken(s string) string {
-	secret := []byte("yandex-practicum")
+	secret := []byte("The-secret-word-must-be-replaced") //заменить при сборке
 	hashPassword := sha256.Sum256([]byte(s))
 	claims := jwt.MapClaims{
 		"password": hashPassword,

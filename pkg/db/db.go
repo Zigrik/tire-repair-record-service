@@ -4,61 +4,44 @@ import (
 	"database/sql"
 	"log"
 	"os"
-	"path/filepath"
-	"strings"
+	"time"
 
 	_ "modernc.org/sqlite"
 )
 
 const schema string = `
-CREATE TABLE scheduler (
+CREATE TABLE tire_service (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    date CHAR(8) NOT NULL DEFAULT "",
+    date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	title VARCHAR NOT NULL DEFAULT "",
-	comment TEXT,
-	repeat VARCHAR(128)
+	record DATETIME,
+	comment VARCHAR(128),
+	status VARCHAR(32)
 );`
 
 var database *sql.DB
 
-type Task struct {
-	ID      string `json:"id"`
-	Date    string `json:"date"`
-	Title   string `json:"title"`
-	Comment string `json:"comment"`
-	Repeat  string `json:"repeat"`
+var (
+	StartTime   = time.Date(0, 1, 1, 9, 0, 0, 0, time.UTC)  // 09:00
+	FinishTime  = time.Date(0, 1, 1, 18, 0, 0, 0, time.UTC) // 18:00
+	Interval    = 30                                        // интервал в минутах
+	MinLeadTime = time.Duration(Interval) * time.Minute     // минимальное время для записи от текущего момента
+)
+
+type Record struct {
+	ID      int64
+	Date    time.Time
+	Title   string
+	Record  *time.Time // может быть nil (текущая очередь)
+	Comment string
+	Status  string
 }
 
 func CloseDatabase() {
 	database.Close()
 }
 
-// we check the name and path of the database from the environment variable. If the data is incorrect, we use the default database
-func checkTodoDbPath(dbFile string, logger *log.Logger) string {
-
-	dbFileTodo := os.Getenv("TODO_DBFILE")
-
-	if dbFileTodo == "" {
-		return dbFile
-	}
-
-	if ext := strings.ToLower(filepath.Ext(dbFileTodo)); ext != ".db" {
-		logger.Printf("WARN: incorrect file extension (%s), required (.db). The default database will be used.\n", ext)
-		return dbFile
-	}
-
-	dir := filepath.Dir(dbFileTodo)
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		logger.Printf("WARN: the %s directory does not exist. The default database will be used.\n", dir)
-		return dbFile
-	}
-
-	return dbFileTodo
-}
-
 func Init(dbFile string, logger *log.Logger) error {
-
-	dbFile = checkTodoDbPath(dbFile, logger)
 
 	var err error
 	database, err = sql.Open("sqlite", dbFile)
