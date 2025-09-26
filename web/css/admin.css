@@ -1,0 +1,162 @@
+/* css/admin.css */
+.container {
+    display: flex;
+    min-height: calc(100vh - 80px);
+}
+
+.sidebar {
+    width: 250px;
+    background-color: var(--cardbg-color);
+    border-right: var(--border-width) solid var(--card-border-color);
+}
+
+.content {
+    flex: 1;
+    padding: 1em;
+}
+
+.nav-tabs {
+    display: flex;
+    flex-direction: column;
+    padding: 1em 0;
+}
+
+.tab-link {
+    padding: 1em 1.5em;
+    border: none;
+    background: none;
+    text-align: left;
+    cursor: pointer;
+    border-left: 3px solid transparent;
+}
+
+.tab-link.active {
+    border-left-color: var(--primary);
+    background-color: var(--gray-200);
+    font-weight: 600;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.controls {
+    display: flex;
+    gap: 1em;
+    margin-bottom: 1em;
+}
+
+.queue-management {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2em;
+}
+
+.work-item, .queue-item {
+    background-color: var(--gray-200);
+    border-radius: 0.5em;
+    padding: 1em;
+    margin-bottom: 0.5em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.work-item {
+    background-color: var(--alert-success-bg);
+}
+
+.queue-item.appointment {
+    background-color: var(--alert-warning-bg);
+}
+
+.work-actions, .queue-actions {
+    display: flex;
+    gap: 0.5em;
+}
+
+.btn.small {
+    padding: 0.3em 0.6em;
+    font-size: 0.8em;
+}
+
+.btn.danger {
+    background-color: var(--red);
+    color: white;
+}
+
+.btn.success {
+    background-color: var(--green);
+    color: white;
+}
+
+.filters {
+    display: flex;
+    gap: 1em;
+    margin-bottom: 1em;
+    align-items: end;
+}
+
+.records-list {
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.record-item {
+    background-color: var(--gray-200);
+    border-radius: 0.5em;
+    padding: 1em;
+    margin-bottom: 0.5em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.calendar-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1em;
+    margin-bottom: 1em;
+}
+
+.calendar {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.5em;
+}
+
+.calendar-day {
+    border: 1px solid var(--gray-300);
+    border-radius: 0.25em;
+    padding: 0.5em;
+    min-height: 80px;
+}
+
+.calendar-day.header {
+    background-color: var(--gray-200);
+    font-weight: 600;
+    text-align: center;
+}
+
+.calendar-day.other-month {
+    opacity: 0.3;
+}
+
+.calendar-day.has-records {
+    background-color: var(--alert-warning-bg);
+    cursor: pointer;
+}
+
+.day-number {
+    font-weight: 600;
+    margin-bottom: 0.5em;
+}
+
+.day-records {
+    font-size: 0.8em;
+}

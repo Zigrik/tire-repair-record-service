@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ru" data-size="normal">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+    <title>Шиномонтаж - Администрирование</title>
+    <link href="https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,400;0,600;1,400&amp;display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --font-family: "Raleway"
+        }
+    </style>
+    <link rel="stylesheet" href="/css/theme.css" type="text/css" media="all" />
+    <link rel="stylesheet" href="/css/admin.css" type="text/css" media="all" />
+    <script src="/js/axios.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <div class="header">
+            <h1>Шиномонтаж - Панель управления</h1>
+            <div class="header-actions">
+                <button class="btn secondary" id="logoutBtn">Выйти</button>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="sidebar">
+                <div class="nav-tabs">
+                    <button class="tab-link active" data-tab="queue">Текущая очередь</button>
+                    <button class="tab-link" data-tab="records">Все записи</button>
+                    <button class="tab-link" data-tab="schedule">Расписание</button>
+                </div>
+            </div>
+
+            <div class="content">
+                <!-- Вкладка текущей очереди -->
+                <div class="tab-content active" id="queueTab">
+                    <div class="section">
+                        <h2>Управление очередью</h2>
+                        <div class="controls">
+                            <button class="btn primary" id="nextBtn">Следующий</button>
+                            <button class="btn secondary" id="cancelBtn">Отменить текущий</button>
+                        </div>
+                        
+                        <div class="queue-management">
+                            <div class="current-work">
+                                <h3>Сейчас в работе</h3>
+                                <div id="currentWorkList"></div>
+                            </div>
+                            
+                            <div class="waiting-queue">
+                                <h3>Ожидают</h3>
+                                <div id="waitingQueueList"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Вкладка всех записей -->
+                <div class="tab-content" id="recordsTab">
+                    <div class="section">
+                        <h2>Все записи</h2>
+                        <div class="filters">
+                            <input type="date" id="filterDate" class="input">
+                            <select id="filterStatus" class="input">
+                                <option value="">Все статусы</option>
+                                <option value="wait">Ожидание</option>
+                                <option value="welcome">Принят</option>
+                                <option value="in work">В работе</option>
+                                <option value="done">Завершен</option>
+                                <option value="cancel">Отменен</option>
+                            </select>
+                            <button class="btn primary" id="applyFilters">Применить</button>
+                        </div>
+                        
+                        <div class="records-list" id="recordsList"></div>
+                    </div>
+                </div>
+
+                <!-- Вкладка расписания -->
+                <div class="tab-content" id="scheduleTab">
+                    <div class="section">
+                        <h2>Расписание записей</h2>
+                        <div class="calendar-controls">
+                            <button class="btn secondary" id="prevMonth">←</button>
+                            <span id="currentMonth"></span>
+                            <button class="btn secondary" id="nextMonth">→</button>
+                        </div>
+                        
+                        <div class="calendar" id="calendar"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Модальное окно редактирования -->
+        <div class="modal" id="editModal" style="display: none;">
+            <div class="dialog">
+                <div class="dialog-header">
+                    <h3>Редактирование записи</h3>
+                </div>
+                <div class="dialog-content">
+                    <form id="editForm">
+                        <input type="hidden" id="editId">
+                        <div class="form-group">
+                            <label>Номер автомобиля</label>
+                            <input type="text" id="editCarNumber" class="input" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Комментарий</label>
+                            <textarea id="editComment" class="input" rows="3"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Дата и время записи</label>
+                            <input type="datetime-local" id="editRecordDate" class="input">
+                        </div>
+                        <div class="form-group">
+                            <label>Статус</label>
+                            <select id="editStatus" class="input">
+                                <option value="wait">Ожидание</option>
+                                <option value="welcome">Принят</option>
+                                <option value="in work">В работе</option>
+                                <option value="done">Завершен</option>
+                                <option value="cancel">Отменен</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="dialog-footer">
+                    <button class="btn secondary" id="cancelEdit">Отмена</button>
+                    <button class="btn primary" id="saveEdit">Сохранить</button>
+                    <button class="btn danger" id="deleteRecord">Удалить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/admin.js"></script>
+</body>
+</html>

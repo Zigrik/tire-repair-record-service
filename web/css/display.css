@@ -1,0 +1,77 @@
+/* css/display.css */
+.queue-screen {
+    background: linear-gradient(135deg, #1a56db 0%, #1e429f 100%);
+    color: white;
+    min-height: 100vh;
+    padding: 1em;
+    font-family: 'Arial Black', sans-serif;
+}
+
+.queue-screen .header {
+    text-align: center;
+    padding: 1em;
+    margin-bottom: 2em;
+}
+
+.queue-screen h1 {
+    font-size: 3em;
+    margin: 0;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+}
+
+.queue-screen .current-time {
+    font-size: 1.5em;
+    margin-top: 0.5em;
+}
+
+.current-tickets {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2em;
+    margin-bottom: 3em;
+}
+
+.ticket-large {
+    background: rgba(255,255,255,0.95);
+    border-radius: 1em;
+    padding: 2em;
+    text-align: center;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    color: #333;
+}
+
+.ticket-large.current {
+    background: linear-gradient(135deg, #23D160, #1a9c4a);
+    color: white;
+}
+
+.ticket-number-large {
+    font-size: 4em;
+    font-weight: bold;
+    margin-bottom: 0.5em;
+}
+
+.car-number {
+    font-size: 1.5em;
+    margin-bottom: 0.5em;
+}
+
+.status {
+    font-size: 1.2em;
+    font-weight: bold;
+    margin-bottom: 0.5em;
+}
+
+.start-time {
+    font-size: 1em;
+    opacity: 0.9;
+}
+
+.queue-section {
+    text-align: center;
+}
+
+.queue-section h2 {
+    font-size: 2.5em;
+    margin-bottom: 1em;
+}

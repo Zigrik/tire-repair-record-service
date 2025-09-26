@@ -7,7 +7,7 @@ import (
 )
 
 // GetAvailableSlots возвращает доступные временные слоты на указанную дату
-func GetAvailableSlots(db *sql.DB, date time.Time) ([]time.Time, error) {
+func GetAvailableSlots(date time.Time) ([]time.Time, error) {
 	// Нормализуем дату (начало дня)
 	date = time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, date.Location())
 
@@ -21,7 +21,7 @@ func GetAvailableSlots(db *sql.DB, date time.Time) ([]time.Time, error) {
 		// Проверяем, не прошло ли время
 		if currentSlot.After(time.Now().Add(MinLeadTime)) {
 			// Проверяем, свободен ли слот
-			isTaken, err := IsTimeSlotTaken(db, currentSlot)
+			isTaken, err := IsTimeSlotTaken(currentSlot)
 			if err != nil {
 				return nil, err
 			}
@@ -37,11 +37,11 @@ func GetAvailableSlots(db *sql.DB, date time.Time) ([]time.Time, error) {
 	return availableSlots, nil
 }
 
-// AddRecordHandler обработчик добавления новой записи
-func AddRecordHandler(db *sql.DB, record Record) error {
+// AddRecord обработчик добавления новой записи
+func AddRecord(record Record) error {
 	// Если указано предварительное время, проверяем его
 	if record.Record != nil {
-		err := ValidateRecordTime(db, *record.Record)
+		err := ValidateRecordTime(*record.Record)
 		if err != nil {
 			return fmt.Errorf("невалидное время записи: %w", err)
 		}
@@ -56,10 +56,10 @@ func AddRecordHandler(db *sql.DB, record Record) error {
 	return err
 }
 
-// UpdateRecordHandler обработчик обновления записи
-func UpdateRecordHandler(db *sql.DB, recordID int64, updatedRecord Record) error {
+// UpdateRecord обработчик обновления записи
+func UpdateRecord(recordID int64, updatedRecord Record) error {
 	if updatedRecord.Record != nil {
-		err := ValidateRecordTime(db, *updatedRecord.Record)
+		err := ValidateRecordTime(*updatedRecord.Record)
 		if err != nil {
 			return fmt.Errorf("невалидное время записи: %w", err)
 		}
@@ -76,7 +76,7 @@ func UpdateRecordHandler(db *sql.DB, recordID int64, updatedRecord Record) error
 }
 
 // DeleteRecord удаляет запись по ID
-func DeleteRecord(db *sql.DB, recordID int64) error {
+func DeleteRecord(recordID int64) error {
 	query := `DELETE FROM tire_service WHERE id = ?`
 
 	result, err := db.Exec(query, recordID)
@@ -97,7 +97,7 @@ func DeleteRecord(db *sql.DB, recordID int64) error {
 }
 
 // UpdateRecordStatus обновляет статус записи по ID
-func UpdateRecordStatus(db *sql.DB, recordID int64, newStatus string) error {
+func UpdateRecordStatus(recordID int64, newStatus string) error {
 	// Проверяем валидность статуса
 	validStatuses := map[string]bool{
 		"wait":    true,
@@ -131,7 +131,7 @@ func UpdateRecordStatus(db *sql.DB, recordID int64, newStatus string) error {
 }
 
 // GetRecordsByDate возвращает все записи на определенную дату (исключая отмененные)
-func GetRecordsByDate(db *sql.DB, date time.Time) ([]Record, error) {
+func GetRecordsByDate(date time.Time) ([]Record, error) {
 	// Нормализуем дату (начало и конец дня)
 	startOfDay := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, date.Location())
 	endOfDay := startOfDay.Add(24 * time.Hour)
@@ -174,7 +174,7 @@ func GetRecordsByDate(db *sql.DB, date time.Time) ([]Record, error) {
 }
 
 // GetTodayRecords возвращает все записи на сегодня с возможностью фильтрации по статусу
-func GetTodayRecords(db *sql.DB, statusFilter string) ([]Record, error) {
+func GetTodayRecords(statusFilter string) ([]Record, error) {
 	today := time.Now()
 	startOfDay := time.Date(today.Year(), today.Month(), today.Day(), 0, 0, 0, 0, today.Location())
 	endOfDay := startOfDay.Add(24 * time.Hour)
@@ -233,7 +233,7 @@ func GetTodayRecords(db *sql.DB, statusFilter string) ([]Record, error) {
 }
 
 // GetRecordByID возвращает запись по ID
-func GetRecordByID(db *sql.DB, recordID int64) (*Record, error) {
+func GetRecordByID(recordID int64) (*Record, error) {
 	query := `
         SELECT id, date, title, record, comment, status 
         FROM tire_service 
@@ -260,7 +260,7 @@ func GetRecordByID(db *sql.DB, recordID int64) (*Record, error) {
 }
 
 // GetAllRecords возвращает все записи (для администрирования)
-func GetAllRecords(db *sql.DB, limit, offset int) ([]Record, error) {
+func GetAllRecords(limit, offset int) ([]Record, error) {
 	query := `
         SELECT id, date, title, record, comment, status 
         FROM tire_service 
@@ -298,7 +298,7 @@ func GetAllRecords(db *sql.DB, limit, offset int) ([]Record, error) {
 }
 
 // GetRecordsByStatus возвращает записи по статусу
-func GetRecordsByStatus(db *sql.DB, status string) ([]Record, error) {
+func GetRecordsByStatus(status string) ([]Record, error) {
 	query := `
         SELECT id, date, title, record, comment, status 
         FROM tire_service 
@@ -336,12 +336,12 @@ func GetRecordsByStatus(db *sql.DB, status string) ([]Record, error) {
 }
 
 // GetPendingRecords возвращает записи в статусе ожидания
-func GetPendingRecords(db *sql.DB) ([]Record, error) {
-	return GetRecordsByStatus(db, "wait")
+func GetPendingRecords() ([]Record, error) {
+	return GetRecordsByStatus("wait")
 }
 
 // GetActiveRecords возвращает активные записи (не завершенные и не отмененные)
-func GetActiveRecords(db *sql.DB) ([]Record, error) {
+func GetActiveRecords() ([]Record, error) {
 	query := `
         SELECT id, date, title, record, comment, status 
         FROM tire_service 

@@ -11,7 +11,6 @@ import (
 const (
 	portDefault int    = 7540
 	dbDefault   string = "tire_service.db"
-	//telegramTokenEnv        = ""
 )
 
 func main() {
@@ -25,10 +24,8 @@ func main() {
 	}
 	defer db.CloseDatabase()
 
-	go func() {
-		srv := server.StartServer(portDefault, logger)
-		if err := srv.HTTPServer.ListenAndServe(); err != nil {
-			logger.Fatal("FATAL: error while server start: ", err)
-		}
-	}()
+	srv := server.StartServer(portDefault, logger)
+	if err := srv.HTTPServer.ListenAndServe(); err != nil {
+		logger.Fatal("FATAL: error while server start: ", err)
+	}
 }

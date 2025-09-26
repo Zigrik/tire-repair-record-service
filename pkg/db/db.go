@@ -19,7 +19,7 @@ CREATE TABLE tire_service (
 	status VARCHAR(32)
 );`
 
-var database *sql.DB
+var db *sql.DB
 
 var (
 	StartTime   = time.Date(0, 1, 1, 9, 0, 0, 0, time.UTC)  // 09:00
@@ -38,13 +38,13 @@ type Record struct {
 }
 
 func CloseDatabase() {
-	database.Close()
+	db.Close()
 }
 
 func Init(dbFile string, logger *log.Logger) error {
 
 	var err error
-	database, err = sql.Open("sqlite", dbFile)
+	db, err = sql.Open("sqlite", dbFile)
 	if err != nil {
 		return err
 	}
@@ -62,7 +62,7 @@ func Init(dbFile string, logger *log.Logger) error {
 		file.Close()
 		logger.Printf("INFO: the %s file has been created\n", dbFile)
 
-		_, err = database.Exec(schema)
+		_, err = db.Exec(schema)
 		if err != nil {
 			return err
 		}

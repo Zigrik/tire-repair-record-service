@@ -1,7 +1,6 @@
 package db
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	"time"
@@ -17,7 +16,7 @@ var (
 )
 
 // ValidateRecordTime проверяет валидность времени записи
-func ValidateRecordTime(db *sql.DB, recordTime time.Time) error {
+func ValidateRecordTime(recordTime time.Time) error {
 	// Приводим к UTC и обнуляем секунды/наносекунды
 	recordTime = recordTime.UTC().Truncate(time.Minute)
 	currentTime := time.Now().UTC().Truncate(time.Minute)
@@ -47,7 +46,7 @@ func ValidateRecordTime(db *sql.DB, recordTime time.Time) error {
 	}
 
 	// 4. Проверка занятости времени
-	isTaken, err := IsTimeSlotTaken(db, recordTime)
+	isTaken, err := IsTimeSlotTaken(recordTime)
 	if err != nil {
 		return fmt.Errorf("ошибка проверки занятости времени: %w", err)
 	}
@@ -60,7 +59,7 @@ func ValidateRecordTime(db *sql.DB, recordTime time.Time) error {
 }
 
 // IsTimeSlotTaken проверяет, занято ли время
-func IsTimeSlotTaken(db *sql.DB, recordTime time.Time) (bool, error) {
+func IsTimeSlotTaken(recordTime time.Time) (bool, error) {
 	// Рассчитываем границы интервала
 	intervalStart := recordTime
 	intervalEnd := recordTime.Add(time.Duration(Interval) * time.Minute)

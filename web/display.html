@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>Очередь шиномонтажа</title>
+    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;600;700;800&amp;display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/theme.css" type="text/css" media="all" />
+    <link rel="stylesheet" href="/css/display.css" type="text/css" media="all" />
+    <script src="/js/axios.min.js"></script>
+</head>
+<body class="queue-screen">
+    <div class="header">
+        <h1>ШИНОМОНТАЖ</h1>
+        <div class="current-time" id="currentTime"></div>
+    </div>
+
+    <div class="current-tickets" id="currentTickets">
+        <!-- Текущие в работе будут здесь -->
+    </div>
+
+    <div class="queue-section">
+        <h2>ОЧЕРЕДЬ</h2>
+        <div class="queue-list-large" id="queueDisplay">
+            <!-- Очередь будет здесь -->
+        </div>
+    </div>
+
+    <script src="/js/display.js"></script>
+</body>
+</html>

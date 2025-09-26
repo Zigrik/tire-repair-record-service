@@ -1,0 +1,237 @@
+.header {
+    background-color: var(--cardbg-color);
+    border-bottom: var(--border-width) solid var(--card-border-color);
+    padding: 1em 2em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1em;
+}
+
+.header h1 {
+    margin: 0;
+    color: var(--primary);
+}
+
+.current-time {
+    font-size: 1.2em;
+    font-weight: 600;
+    color: var(--gray-700);
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1em;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2em;
+}
+
+.section {
+    background-color: var(--cardbg-color);
+    border-radius: var(--border-radius);
+    padding: 1.5em;
+    box-shadow: var(--box-shadow);
+}
+
+.section h2 {
+    margin-top: 0;
+    margin-bottom: 1em;
+    color: var(--primary);
+    border-bottom: 2px solid var(--primary);
+    padding-bottom: 0.5em;
+}
+
+.form-section {
+    grid-column: 1 / -1;
+}
+
+.queue-list {
+    min-height: 200px;
+}
+
+.ticket-item {
+    background-color: var(--gray-200);
+    border: 1px solid var(--gray-300);
+    border-radius: 0.5em;
+    padding: 1em;
+    margin-bottom: 0.5em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+
+.ticket-item.current {
+    background-color: var(--alert-success-bg);
+    border-color: var(--alert-success-border);
+}
+
+.ticket-item.record {
+    background-color: var(--alert-warning-bg);
+    border-color: var(--alert-warning-border);
+}
+
+.ticket-number {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: var(--primary);
+}
+
+.ticket-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.ticket-car {
+    font-weight: 600;
+    font-size: 1.1em;
+}
+
+.ticket-comment {
+    color: var(--gray-700);
+    font-size: 0.9em;
+}
+
+.ticket-time {
+    color: var(--gray-500);
+    font-size: 0.8em;
+}
+
+.empty-message {
+    text-align: center;
+    color: var(--gray-500);
+    font-style: italic;
+    padding: 2em;
+}
+
+.form-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1em;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    margin-bottom: 0.5em;
+    font-weight: 600;
+    color: var(--gray-700);
+}
+
+.pre-record-fields {
+    grid-column: 1 / -1;
+    border-top: 1px solid var(--gray-300);
+    padding-top: 1em;
+    margin-top: 1em;
+}
+
+#getTicketBtn {
+    grid-column: 1 / -1;
+    justify-self: center;
+    min-width: 200px;
+    margin-top: 1em;
+}
+
+.ticket-number {
+    text-align: center;
+    font-size: 4em;
+    font-weight: bold;
+    color: var(--primary);
+    margin: 0.5em 0;
+}
+
+.ticket-info {
+    text-align: center;
+    font-size: 1.2em;
+    margin-bottom: 1em;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .container {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .header {
+        flex-direction: column;
+        text-align: center;
+        gap: 1em;
+    }
+}
+
+/* Анимации */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.ticket-item {
+    animation: fadeIn 0.3s ease;
+}
+
+/* Стили для экрана отображения очереди */
+.queue-screen {
+    background-color: var(--mainbg-color);
+    padding: 1em;
+    font-family: 'Arial Black', sans-serif;
+}
+
+.queue-screen .header {
+    text-align: center;
+    background: linear-gradient(135deg, var(--primary), #1a56db);
+    color: white;
+    padding: 1em;
+    margin-bottom: 1em;
+    border-radius: var(--border-radius);
+}
+
+.queue-screen .current-tickets {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1em;
+    margin-bottom: 2em;
+}
+
+.queue-screen .ticket-large {
+    background: white;
+    border-radius: 1em;
+    padding: 1.5em;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.queue-screen .ticket-number-large {
+    font-size: 3em;
+    font-weight: bold;
+    color: var(--primary);
+    margin-bottom: 0.5em;
+}
+
+.queue-screen .queue-list-large {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1em;
+}
+
+.queue-screen .ticket-item-large {
+    background: white;
+    border-radius: 0.5em;
+    padding: 1em;
+    text-align: center;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.queue-screen .ticket-number-medium {
+    font-size: 2em;
+    font-weight: bold;
+    color: var(--gray-700);
+}
