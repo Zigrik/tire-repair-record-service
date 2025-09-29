@@ -71,19 +71,28 @@ func addRecordHandler(res http.ResponseWriter, req *http.Request, logger *log.Lo
 		return
 	}
 
-	record := db.Record{
-		Title:   addReq.Title,
-		Record:  addReq.Record,
-		Comment: addReq.Comment,
-		Status:  "wait",
+	// Валидация обязательных полей
+	if addReq.Title == "" {
+		logger.Printf("WARN: missing required field 'title'")
+		writeJsonError(res, http.StatusBadRequest, "Car number is required")
+		return
 	}
 
-	if record.Record != nil {
-		if err := db.ValidateRecordTime(*record.Record); err != nil {
+	// Если время указано (предварительная запись), валидируем его
+	if addReq.Record != nil {
+		if err := db.ValidateRecordTime(*addReq.Record); err != nil {
 			logger.Printf("WARN: validation error, %v", err)
 			writeJsonError(res, http.StatusBadRequest, err.Error())
 			return
 		}
+	}
+	// Если время не указано - это запись в текущую очередь, валидация не нужна
+
+	record := db.Record{
+		Title:   addReq.Title,
+		Record:  addReq.Record, // может быть nil для текущей очереди
+		Comment: addReq.Comment,
+		Status:  "wait",
 	}
 
 	err := db.AddRecord(record)
@@ -94,7 +103,10 @@ func addRecordHandler(res http.ResponseWriter, req *http.Request, logger *log.Lo
 	}
 
 	logger.Printf("INFO: record added successfully for car %s", record.Title)
-	writeJson(res, http.StatusOK, map[string]any{"message": "Record added successfully"})
+	writeJson(res, http.StatusOK, map[string]any{
+		"message": "Record added successfully",
+		"success": true,
+	})
 }
 
 func getTodayRecordsHandler(res http.ResponseWriter, req *http.Request, logger *log.Logger) {

@@ -1,307 +1,254 @@
-// js/tire-service.js
 class TireService {
     constructor() {
-        this.currentQueue = [];
-        this.inWork = [];
-        this.updateInterval = null;
-        this.autoRedirectTimer = null;
+        this.currentTimeElement = document.getElementById('currentTime');
+        this.inWorkList = document.getElementById('inWorkList');
+        this.queueList = document.getElementById('queueList');
+        this.carNumberInput = document.getElementById('carNumber');
+        this.commentInput = document.getElementById('comment');
+        this.preRecordCheckbox = document.getElementById('preRecord');
+        this.preRecordFields = document.getElementById('preRecordFields');
+        this.recordDateInput = document.getElementById('recordDate');
+        this.getTicketBtn = document.getElementById('getTicketBtn');
+        this.ticketModal = document.getElementById('ticketModal');
+        this.ticketNumber = document.getElementById('ticketNumber');
+        this.ticketInfo = document.getElementById('ticketInfo');
+        this.closeModalBtn = document.getElementById('closeModalBtn');
+
+        this.init();
+    }
+
+    init() {
+        this.updateTime();
+        setInterval(() => this.updateTime(), 1000);
         
-        this.initializeEventListeners();
-        this.updateCurrentTime();
         this.loadQueue();
-        this.startAutoUpdate();
-    }
+        setInterval(() => this.loadQueue(), 5000);
 
-    initializeEventListeners() {
-        // Переключение предварительной записи
-        document.getElementById('preRecord').addEventListener('change', (e) => {
-            document.getElementById('preRecordFields').style.display = e.target.checked ? 'block' : 'none';
-            
-            // Устанавливаем минимальную дату для записи (текущее время + 30 минут)
-            if (e.target.checked) {
-                const now = new Date();
-                now.setMinutes(now.getMinutes() + 30);
-                const minDate = now.toISOString().slice(0, 16);
-                document.getElementById('recordDate').min = minDate;
-            }
-        });
+        this.preRecordCheckbox.addEventListener('change', () => this.togglePreRecord());
+        this.getTicketBtn.addEventListener('click', () => this.getTicket());
+        this.closeModalBtn.addEventListener('click', () => this.closeModal());
 
-        // Получение талона
-        document.getElementById('getTicketBtn').addEventListener('click', () => {
-            this.getTicket();
-        });
-
-        // Закрытие модального окна
-        document.getElementById('closeModalBtn').addEventListener('click', () => {
-            this.closeModal();
-        });
-
-        // Автоматическое закрытие модального окна по клику на фон
-        document.getElementById('ticketModal').addEventListener('click', (e) => {
-            if (e.target === document.getElementById('ticketModal')) {
-                this.closeModal();
-            }
-        });
-
-        // Enter для быстрого получения талона
-        document.getElementById('carNumber').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                this.getTicket();
-            }
-        });
-    }
-
-    updateCurrentTime() {
-        const updateTime = () => {
-            const now = new Date();
-            document.getElementById('currentTime').textContent = 
-                now.toLocaleDateString('ru-RU') + ' ' + 
-                now.toLocaleTimeString('ru-RU');
-        };
+        // Устанавливаем минимальную дату для записи
+        const minDate = new Date();
+        minDate.setMinutes(minDate.getMinutes() + 30);
+        this.recordDateInput.min = minDate.toISOString().slice(0, 16);
         
-        updateTime();
-        setInterval(updateTime, 1000);
+        console.log('TireService initialized');
     }
 
-    async loadQueue() {
-        try {
-            // Загружаем все записи на сегодня
-            const response = await axios.get('/api/GetTodayRecords');
-            
-            if (response.data.records) {
-                this.processQueueData(response.data.records);
-                this.renderQueue();
-            }
-        } catch (error) {
-            console.error('Ошибка загрузки очереди:', error);
-            this.showError('Ошибка загрузки очереди');
-        }
-    }
-
-    processQueueData(records) {
-        this.inWork = [];
-        this.currentQueue = [];
-
+    updateTime() {
         const now = new Date();
-        
-        // Фильтруем только активные записи (исключаем завершенные и отмененные)
-        const activeRecords = records.filter(record => 
-            record.status !== 'done' && record.status !== 'cancel'
-        );
-
-        // Разделяем записи по статусам
-        activeRecords.forEach(record => {
-            if (record.status === 'in work') {
-                this.inWork.push(record);
-            } else {
-                this.currentQueue.push(record);
-            }
-        });
-
-        // Сортируем очередь
-        this.organizeQueue();
-    }
-
-    organizeQueue() {
-        // Сначала обычная очередь (без предварительной записи)
-        const regularQueue = this.currentQueue.filter(item => !item.record);
-        
-        // Затем предварительные записи, отсортированные по времени
-        const appointments = this.currentQueue.filter(item => item.record)
-            .sort((a, b) => new Date(a.record) - new Date(b.record));
-
-        // Объединяем: сначала обычная очередь, потом предварительные записи
-        this.currentQueue = [...regularQueue, ...appointments];
-    }
-
-    renderQueue() {
-        this.renderInWork();
-        this.renderQueueList();
-    }
-
-    renderInWork() {
-        const container = document.getElementById('inWorkList');
-        
-        if (this.inWork.length === 0) {
-            container.innerHTML = '<div class="empty-message">Нет машин в работе</div>';
-            return;
-        }
-
-        container.innerHTML = this.inWork.map(record => `
-            <div class="ticket-item current">
-                <div class="ticket-info">
-                    <div class="ticket-number">${this.formatTicketNumber(record)}</div>
-                    <div class="ticket-car">${record.title}</div>
-                    <div class="ticket-comment">${record.comment || ''}</div>
-                </div>
-                <div class="ticket-status">В работе</div>
-            </div>
-        `).join('');
-    }
-
-    renderQueueList() {
-        const container = document.getElementById('queueList');
-        
-        if (this.currentQueue.length === 0) {
-            container.innerHTML = '<div class="empty-message">Очередь пуста</div>';
-            return;
-        }
-
-        container.innerHTML = this.currentQueue.map((record, index) => `
-            <div class="ticket-item ${record.record ? 'record' : ''}">
-                <div class="ticket-info">
-                    <div class="ticket-number">${this.formatTicketNumber(record)}</div>
-                    <div class="ticket-car">${record.title}</div>
-                    <div class="ticket-comment">${record.comment || ''}</div>
-                    ${record.record ? `<div class="ticket-time">Запись на: ${this.formatDateTime(record.record)}</div>` : ''}
-                </div>
-                <div class="ticket-position">${index + 1}</div>
-            </div>
-        `).join('');
-    }
-
-    formatTicketNumber(record) {
-        const id = record.id ? record.id.toString().slice(-3).padStart(3, '0') : '000';
-        return record.record ? `З${id}` : `О${id}`;
-    }
-
-    formatDateTime(dateTime) {
-        const date = new Date(dateTime);
-        return date.toLocaleString('ru-RU', {
+        this.currentTimeElement.textContent = now.toLocaleString('ru-RU', {
             day: '2-digit',
             month: '2-digit',
             year: 'numeric',
             hour: '2-digit',
-            minute: '2-digit'
+            minute: '2-digit',
+            second: '2-digit'
         });
     }
 
+    togglePreRecord() {
+        if (this.preRecordCheckbox.checked) {
+            this.preRecordFields.style.display = 'block';
+        } else {
+            this.preRecordFields.style.display = 'none';
+            this.recordDateInput.value = '';
+        }
+    }
+
+    async loadQueue() {
+        try {
+            console.log('Loading queue...');
+            const response = await axios.get('/api/GetTodayRecords');
+            console.log('Queue response:', response.data);
+            
+            // Нормализуем поля - преобразуем заглавные в строчные
+            const records = this.normalizeRecords(response.data.records || []);
+            
+            console.log('Normalized records:', records);
+            this.displayQueue(records);
+        } catch (error) {
+            console.error('Ошибка загрузки очереди:', error);
+            this.showError('Ошибка загрузки данных');
+        }
+    }
+
+    // Преобразуем поля из заглавных в строчные
+    normalizeRecords(records) {
+        return records.map(record => ({
+            id: record.ID || record.id,
+            date: record.Date || record.date,
+            title: record.Title || record.title,
+            record: record.Record || record.record,
+            comment: record.Comment || record.comment,
+            status: record.Status || record.status
+        }));
+    }
+
+    displayQueue(records) {
+        console.log('Displaying records:', records);
+        
+        // Фильтруем записи по статусам
+        const inWorkRecords = records.filter(record => 
+            record.status === 'in work' || record.status === 'welcome'
+        );
+        
+        const waitingRecords = records.filter(record => 
+            record.status === 'wait'
+        );
+
+        console.log('In work records:', inWorkRecords);
+        console.log('Waiting records:', waitingRecords);
+
+        // Отображаем "В работе"
+        if (inWorkRecords.length > 0) {
+            this.inWorkList.innerHTML = inWorkRecords.map(record => `
+                <div class="queue-item in-work">
+                    <div class="car-number">${this.escapeHtml(record.title)}</div>
+                    <div class="record-info">
+                        <div class="record-time">${this.formatRecordTime(record.record)}</div>
+                        <div class="status">${this.getStatusText(record.status)}</div>
+                    </div>
+                    ${record.comment ? `<div class="comment">Комментарий: ${this.escapeHtml(record.comment)}</div>` : ''}
+                </div>
+            `).join('');
+        } else {
+            this.inWorkList.innerHTML = '<div class="empty-message">Нет машин в работе</div>';
+        }
+
+        // Отображаем "Очередь"
+        if (waitingRecords.length > 0) {
+            this.queueList.innerHTML = waitingRecords.map((record, index) => `
+                <div class="queue-item waiting">
+                    <div class="car-number">${this.escapeHtml(record.title)}</div>
+                    <div class="record-info">
+                        <div class="record-time">${this.formatRecordTime(record.record)}</div>
+                        <div class="position">Позиция: #${index + 1}</div>
+                    </div>
+                    ${record.comment ? `<div class="comment">Комментарий: ${this.escapeHtml(record.comment)}</div>` : ''}
+                </div>
+            `).join('');
+        } else {
+            this.queueList.innerHTML = '<div class="empty-message">Очередь пуста</div>';
+        }
+    }
+
+    formatRecordTime(recordTime) {
+        if (!recordTime) return 'Текущая очередь';
+        
+        try {
+            const date = new Date(recordTime);
+            return `Запись на: ${date.toLocaleString('ru-RU', {
+                day: '2-digit',
+                month: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            })}`;
+        } catch (e) {
+            return 'Текущая очередь';
+        }
+    }
+
+    getStatusText(status) {
+        const statusMap = {
+            'wait': 'Ожидание',
+            'welcome': 'Принят',
+            'in work': 'В работе',
+            'done': 'Завершен',
+            'cancel': 'Отменен'
+        };
+        return statusMap[status] || status;
+    }
+
     async getTicket() {
-        const carNumber = document.getElementById('carNumber').value.trim();
-        const comment = document.getElementById('comment').value.trim();
-        const isPreRecord = document.getElementById('preRecord').checked;
-        const recordDate = document.getElementById('recordDate').value;
+        const carNumber = this.carNumberInput.value.trim();
+        const comment = this.commentInput.value.trim();
+        const isPreRecord = this.preRecordCheckbox.checked;
+        const recordDate = isPreRecord ? this.recordDateInput.value : null;
 
         if (!carNumber) {
-            this.showError('Пожалуйста, введите номер автомобиля');
+            alert('Пожалуйста, введите номер автомобиля');
             return;
         }
 
         if (isPreRecord && !recordDate) {
-            this.showError('Пожалуйста, выберите дату и время для предварительной записи');
+            alert('Пожалуйста, выберите дату и время для предварительной записи');
             return;
         }
 
-        // Проверка времени для предварительной записи
-        if (isPreRecord) {
-            const selectedTime = new Date(recordDate);
-            const now = new Date();
-            const minTime = new Date(now.getTime() + 30 * 60000); // +30 минут
-            
-            if (selectedTime < minTime) {
-                this.showError('Время записи должно быть минимум на 30 минут позже текущего времени');
-                return;
-            }
-        }
-
         try {
-            const recordData = {
+            const requestData = {
                 title: carNumber,
-                comment: comment,
-                record: isPreRecord ? recordDate : null
+                comment: comment
             };
 
-            console.log('Отправка данных:', recordData);
+            if (isPreRecord && recordDate) {
+                requestData.record = new Date(recordDate).toISOString();
+            }
+
+            console.log('Sending request:', requestData);
+            const response = await axios.post('/api/AddRecord', requestData);
+            console.log('Response received:', response.data);
             
-            const response = await axios.post('/api/AddRecord', recordData);
-            
-            console.log('Ответ сервера:', response.data);
-            
-            if (response.data.message === "Record added successfully") {
-                // После успешного добавления загружаем обновленную очередь
-                await this.loadQueue();
-                
-                // Показываем номер талона (используем последний ID из очереди)
-                const lastRecord = this.currentQueue[this.currentQueue.length - 1];
-                this.showTicket(lastRecord.id, carNumber, comment, isPreRecord);
+            if (response.data.message === 'Record added successfully') {
+                this.showSuccessModal(carNumber, isPreRecord, recordDate);
                 this.clearForm();
+                this.loadQueue();
             } else {
-                this.showError('Ошибка при получении талона');
+                throw new Error(response.data.error || 'Unknown error');
             }
         } catch (error) {
-            console.error('Ошибка получения талона:', error);
-            if (error.response && error.response.data) {
-                this.showError('Ошибка: ' + error.response.data.error);
-            } else {
-                this.showError('Ошибка при получении талона. Попробуйте еще раз.');
+            console.error('Ошибка при получении талона:', error);
+            
+            let errorMessage = 'Ошибка при получении талона. Попробуйте еще раз.';
+            if (error.response && error.response.data && error.response.data.error) {
+                errorMessage = error.response.data.error;
             }
+            
+            alert(errorMessage);
         }
     }
 
-    showTicket(recordId, carNumber, comment, isPreRecord) {
-        const ticketNumber = this.formatTicketNumber({id: recordId, record: isPreRecord});
+    showSuccessModal(carNumber, isPreRecord, recordDate) {
+        this.ticketNumber.textContent = `Автомобиль: ${carNumber}`;
         
-        document.getElementById('ticketNumber').textContent = ticketNumber;
-        document.getElementById('ticketInfo').innerHTML = `
-            <div><strong>Автомобиль:</strong> ${carNumber}</div>
-            ${comment ? `<div><strong>Комментарий:</strong> ${comment}</div>` : ''}
-            <div><strong>Тип:</strong> ${isPreRecord ? 'Предварительная запись' : 'Текущая очередь'}</div>
-            <div class="redirect-timer">Автоматическое закрытие через: <span id="countdown">5</span> сек.</div>
-        `;
+        if (isPreRecord && recordDate) {
+            const date = new Date(recordDate);
+            this.ticketInfo.textContent = `Запись на: ${date.toLocaleString('ru-RU')}`;
+        } else {
+            this.ticketInfo.textContent = 'Текущая очередь - ожидайте вызова';
+        }
         
-        document.getElementById('ticketModal').style.display = 'flex';
-        
-        // Таймер обратного отсчета
-        let countdown = 5;
-        const countdownElement = document.getElementById('countdown');
-        const countdownInterval = setInterval(() => {
-            countdown--;
-            countdownElement.textContent = countdown;
-            
-            if (countdown <= 0) {
-                clearInterval(countdownInterval);
-                this.closeModal();
-            }
-        }, 1000);
-        
-        // Сохраняем ID интервала для очистки
-        this.autoRedirectTimer = countdownInterval;
+        this.ticketModal.style.display = 'flex';
     }
 
     closeModal() {
-        document.getElementById('ticketModal').style.display = 'none';
-        if (this.autoRedirectTimer) {
-            clearInterval(this.autoRedirectTimer);
-            this.autoRedirectTimer = null;
-        }
+        this.ticketModal.style.display = 'none';
     }
 
     clearForm() {
-        document.getElementById('carNumber').value = '';
-        document.getElementById('comment').value = '';
-        document.getElementById('preRecord').checked = false;
-        document.getElementById('preRecordFields').style.display = 'none';
-        document.getElementById('recordDate').value = '';
-        
-        // Фокус на поле ввода номера автомобиля
-        document.getElementById('carNumber').focus();
+        this.carNumberInput.value = '';
+        this.commentInput.value = '';
+        this.preRecordCheckbox.checked = false;
+        this.preRecordFields.style.display = 'none';
+        this.recordDateInput.value = '';
     }
 
     showError(message) {
-        alert(message); // Можно заменить на красивый toast
+        this.inWorkList.innerHTML = `<div class="error-message">${message}</div>`;
+        this.queueList.innerHTML = `<div class="error-message">${message}</div>`;
     }
 
-    startAutoUpdate() {
-        this.updateInterval = setInterval(() => {
-            this.loadQueue();
-        }, 20000); // Обновление каждые 20 секунд
+    escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 }
 
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', () => {
     new TireService();
-    
-    // Фокус на поле ввода номера автомобиля
-    document.getElementById('carNumber').focus();
 });

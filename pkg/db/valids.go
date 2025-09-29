@@ -17,9 +17,9 @@ var (
 
 // ValidateRecordTime проверяет валидность времени записи
 func ValidateRecordTime(recordTime time.Time) error {
-	// Приводим к UTC и обнуляем секунды/наносекунды
-	recordTime = recordTime.UTC().Truncate(time.Minute)
-	currentTime := time.Now().UTC().Truncate(time.Minute)
+	// Приводим к локальному времени и обнуляем секунды/наносекунды
+	recordTime = recordTime.Local().Truncate(time.Minute)
+	currentTime := time.Now().Local().Truncate(time.Minute)
 
 	// 1. Проверка на минимальное время от текущего момента
 	if recordTime.Sub(currentTime) < MinLeadTime {
@@ -27,7 +27,7 @@ func ValidateRecordTime(recordTime time.Time) error {
 	}
 
 	// 2. Проверка рабочего времени
-	recordTimeOfDay := time.Date(0, 1, 1, recordTime.Hour(), recordTime.Minute(), 0, 0, time.UTC)
+	recordTimeOfDay := time.Date(0, 1, 1, recordTime.Hour(), recordTime.Minute(), 0, 0, time.Local)
 
 	if recordTimeOfDay.Before(StartTime) {
 		return ErrTimeTooEarly
@@ -38,7 +38,7 @@ func ValidateRecordTime(recordTime time.Time) error {
 	}
 
 	// 3. Проверка кратности интервалу
-	startOfDay := time.Date(recordTime.Year(), recordTime.Month(), recordTime.Day(), 0, 0, 0, 0, time.UTC)
+	startOfDay := time.Date(recordTime.Year(), recordTime.Month(), recordTime.Day(), 0, 0, 0, 0, recordTime.Location())
 	minutesFromStart := recordTime.Sub(startOfDay).Minutes()
 
 	if int(minutesFromStart)%Interval != 0 {

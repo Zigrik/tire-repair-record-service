@@ -152,7 +152,7 @@ func GetRecordsByDate(date time.Time) ([]Record, error) {
 	var records []Record
 	for rows.Next() {
 		var record Record
-		var recordTime sql.NullTime // используем NullTime для nullable record
+		var recordTime sql.NullTime
 
 		err := rows.Scan(&record.ID, &record.Date, &record.Title, &recordTime, &record.Comment, &record.Status)
 		if err != nil {
@@ -184,21 +184,27 @@ func GetTodayRecords(statusFilter string) ([]Record, error) {
 
 	if statusFilter == "" {
 		// Без фильтра по статусу - все записи кроме отмененных
+		// ВКЛЮЧАЕМ записи с record = NULL (текущая очередь) И записи на сегодня
 		query = `
             SELECT id, date, title, record, comment, status 
             FROM tire_service 
-            WHERE record BETWEEN ? AND ? 
+            WHERE (record IS NULL OR record BETWEEN ? AND ?)
             AND status != 'cancel'
-            ORDER BY record ASC`
+            AND status IN ('wait', 'welcome', 'in work')
+            ORDER BY 
+                CASE WHEN record IS NULL THEN 0 ELSE 1 END, -- Сначала записи без времени (текущая очередь)
+                record ASC`
 		args = []interface{}{startOfDay, endOfDay}
 	} else {
 		// С фильтром по конкретному статусу
 		query = `
             SELECT id, date, title, record, comment, status 
             FROM tire_service 
-            WHERE record BETWEEN ? AND ? 
+            WHERE (record IS NULL OR record BETWEEN ? AND ?)
             AND status = ?
-            ORDER BY record ASC`
+            ORDER BY 
+                CASE WHEN record IS NULL THEN 0 ELSE 1 END,
+                record ASC`
 		args = []interface{}{startOfDay, endOfDay, statusFilter}
 	}
 
@@ -346,7 +352,10 @@ func GetActiveRecords() ([]Record, error) {
         SELECT id, date, title, record, comment, status 
         FROM tire_service 
         WHERE status IN ('wait', 'welcome', 'in work')
-        ORDER BY record ASC, date ASC`
+        AND (record IS NULL OR record >= datetime('now', 'start of day'))
+        ORDER BY 
+            CASE WHEN record IS NULL THEN 0 ELSE 1 END,
+            record ASC`
 
 	rows, err := db.Query(query)
 	if err != nil {
