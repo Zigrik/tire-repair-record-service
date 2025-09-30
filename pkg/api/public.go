@@ -2,10 +2,77 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+	"time"
 	"tire-pepair-record-service/pkg/db"
 )
+
+// normalizeRecord преобразует запись в единый формат для фронтенда
+func normalizeRecord(record db.Record) map[string]interface{} {
+	normalized := map[string]interface{}{
+		"id":      record.ID,
+		"date":    record.Date,
+		"title":   record.Title,
+		"record":  record.Record,
+		"comment": record.Comment,
+		"status":  record.Status,
+	}
+
+	// Генерируем номер талона
+	ticketNumber := generateTicketNumber(record.ID, record.Record)
+	normalized["ticketNumber"] = ticketNumber
+
+	return normalized
+}
+
+// generateTicketNumber генерирует номер талона
+func generateTicketNumber(id int64, recordTime *time.Time) string {
+	prefix := "О" // Очередь
+	if recordTime != nil {
+		prefix = "З" // Запись
+	}
+
+	// Берем последние 3 цифры ID
+	idStr := fmt.Sprintf("%d", id)
+	if len(idStr) > 3 {
+		idStr = idStr[len(idStr)-3:]
+	} else {
+		idStr = fmt.Sprintf("%03s", idStr)
+	}
+
+	return prefix + idStr
+}
+
+// normalizeRecords преобразует массив записей
+func normalizeRecords(records []db.Record) []map[string]interface{} {
+	normalized := make([]map[string]interface{}, len(records))
+	for i, record := range records {
+		normalized[i] = normalizeRecord(record)
+	}
+	return normalized
+}
+
+func getTodayRecordsHandler(res http.ResponseWriter, req *http.Request, logger *log.Logger) {
+	if req.Method != http.MethodGet {
+		logger.Printf("WARN: incorrect request type")
+		writeJsonError(res, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	records, err := db.GetTodayRecords("")
+	if err != nil {
+		logger.Printf("ERROR: getting today's records error, %v", err)
+		writeJsonError(res, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	logger.Printf("INFO: today's records retrieved successfully")
+	writeJson(res, http.StatusOK, map[string]any{
+		"records": normalizeRecords(records),
+	})
+}
 
 func getAvailableSlotsHandler(res http.ResponseWriter, req *http.Request, logger *log.Logger) {
 	if req.Method != http.MethodPost {
@@ -107,23 +174,4 @@ func addRecordHandler(res http.ResponseWriter, req *http.Request, logger *log.Lo
 		"message": "Record added successfully",
 		"success": true,
 	})
-}
-
-func getTodayRecordsHandler(res http.ResponseWriter, req *http.Request, logger *log.Logger) {
-	if req.Method != http.MethodGet {
-		logger.Printf("WARN: incorrect request type")
-		writeJsonError(res, http.StatusMethodNotAllowed, "Method not allowed")
-		return
-	}
-
-	// Без фильтра по статусу - все записи на сегодня
-	records, err := db.GetTodayRecords("")
-	if err != nil {
-		logger.Printf("ERROR: getting today's records error, %v", err)
-		writeJsonError(res, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	logger.Printf("INFO: today's records retrieved successfully")
-	writeJson(res, http.StatusOK, map[string]any{"records": records})
 }

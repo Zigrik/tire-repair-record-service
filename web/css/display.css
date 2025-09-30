@@ -1,117 +1,106 @@
-/* css/display.css */
 .queue-screen {
-    background: linear-gradient(135deg, #1a56db 0%, #1e429f 100%);
+    background: #1a1a1a;
     color: white;
-    min-height: 100vh;
-    padding: 1em;
-    font-family: 'Arial Black', sans-serif;
+    font-family: 'Raleway', sans-serif;
+    margin: 0;
+    padding: 20px;
 }
 
-.queue-screen .header {
+.header {
     text-align: center;
-    padding: 1em;
-    margin-bottom: 2em;
+    margin-bottom: 30px;
 }
 
-.queue-screen h1 {
+.header h1 {
     font-size: 3em;
     margin: 0;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    color: #ffd700;
 }
 
-.queue-screen .current-time {
+.current-time {
     font-size: 1.5em;
-    margin-top: 0.5em;
+    margin-top: 10px;
 }
 
 .current-tickets {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 2em;
-    margin-bottom: 3em;
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
 }
 
-.ticket-large {
-    background: rgba(255,255,255,0.95);
-    border-radius: 1em;
-    padding: 2em;
+.current-ticket {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+    padding: 20px;
+    border-radius: 15px;
     text-align: center;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-    color: #333;
-}
-
-.ticket-large.current {
-    background: linear-gradient(135deg, #23D160, #1a9c4a);
-    color: white;
+    min-width: 200px;
+    box-shadow: 0 8px 25px rgba(255, 107, 107, 0.3);
 }
 
 .ticket-number-large {
-    font-size: 4em;
-    font-weight: bold;
-    margin-bottom: 0.5em;
+    font-size: 3em;
+    font-weight: 800;
+    margin-bottom: 10px;
 }
 
-.car-number {
-    font-size: 1.5em;
-    margin-bottom: 0.5em;
+.car-number-large {
+    font-size: 2em;
+    font-weight: 600;
+    margin-bottom: 10px;
 }
 
-.status {
+.status-large {
     font-size: 1.2em;
-    font-weight: bold;
-    margin-bottom: 0.5em;
-}
-
-.start-time {
-    font-size: 1em;
-    opacity: 0.9;
-}
-
-.queue-section {
-    text-align: center;
+    font-weight: 600;
 }
 
 .queue-section h2 {
+    text-align: center;
     font-size: 2.5em;
-    margin-bottom: 1em;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    color: #ffd700;
+    margin-bottom: 20px;
 }
 
 .queue-list-large {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1em;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+    max-width: 1200px;
+    margin: 0 auto;
 }
 
-.ticket-item-large {
-    background: rgba(255,255,255,0.9);
-    border-radius: 0.5em;
-    padding: 1em;
-    text-align: center;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-    color: #333;
+.queue-item-large {
+    background: linear-gradient(135deg, #74b9ff, #0984e3);
+    padding: 15px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    box-shadow: 0 4px 15px rgba(116, 185, 255, 0.3);
 }
 
-.ticket-item-large.appointment {
-    background: rgba(255,221,87,0.9);
-}
-
-.ticket-number-medium {
+.queue-position {
     font-size: 2em;
-    font-weight: bold;
-    margin-bottom: 0.5em;
+    font-weight: 800;
+    min-width: 50px;
 }
 
-.position {
-    font-size: 1.2em;
-    font-weight: bold;
+.queue-ticket {
+    font-size: 1.5em;
+    font-weight: 600;
+}
+
+.queue-car {
+    font-size: 1.3em;
+    font-weight: 600;
+}
+
+.no-tickets,
+.no-queue {
+    text-align: center;
+    font-size: 2em;
     color: #666;
-}
-
-.empty-queue {
-    grid-column: 1 / -1;
-    text-align: center;
-    font-size: 2em;
-    padding: 2em;
-    opacity: 0.7;
+    padding: 40px;
 }

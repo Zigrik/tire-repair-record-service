@@ -1,119 +1,101 @@
-// js/display.js
 class QueueDisplay {
     constructor() {
-        this.queueData = [];
-        this.updateInterval = null;
+        this.currentTimeElement = document.getElementById('currentTime');
+        this.currentTickets = document.getElementById('currentTickets');
+        this.queueDisplay = document.getElementById('queueDisplay');
+
+        this.init();
+    }
+
+    init() {
+        this.updateTime();
+        setInterval(() => this.updateTime(), 1000);
         
-        this.initialize();
         this.loadQueue();
-        this.startAutoUpdate();
+        setInterval(() => this.loadQueue(), 3000); // Обновлять каждые 3 секунды
+
+        console.log('QueueDisplay initialized');
     }
 
-    initialize() {
-        this.updateCurrentTime();
-    }
-
-    updateCurrentTime() {
-        const updateTime = () => {
-            const now = new Date();
-            document.getElementById('currentTime').textContent = 
-                now.toLocaleDateString('ru-RU') + ' ' + 
-                now.toLocaleTimeString('ru-RU');
-        };
-        
-        updateTime();
-        setInterval(updateTime, 1000);
+    updateTime() {
+        const now = new Date();
+        this.currentTimeElement.textContent = now.toLocaleString('ru-RU', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
     }
 
     async loadQueue() {
         try {
             const response = await axios.get('/api/GetTodayRecords');
-            this.queueData = response.data.records || [];
-            this.renderQueue();
+            const records = response.data.records || [];
+            this.displayQueue(records);
         } catch (error) {
             console.error('Ошибка загрузки очереди:', error);
         }
     }
 
-    renderQueue() {
-        this.renderCurrentTickets();
-        this.renderQueueList();
-    }
+    displayQueue(records) {
+        // Текущие в работе (максимум 3)
+        const inWorkRecords = records.filter(record => 
+            record.status === 'in work' || record.status === 'welcome'
+        ).slice(0, 3);
 
-    renderCurrentTickets() {
-        const container = document.getElementById('currentTickets');
-        const inWork = this.queueData.filter(record => record.status === 'in work');
-        
-        if (inWork.length === 0) {
-            container.innerHTML = `
-                <div class="ticket-large">
-                    <div class="ticket-number-large">---</div>
-                    <div class="status">СВОБОДНО</div>
-                </div>
-            `;
-            return;
-        }
-
-        container.innerHTML = inWork.map(record => `
-            <div class="ticket-large current">
-                <div class="ticket-number-large">${this.formatTicketNumber(record)}</div>
-                <div class="car-number">${record.title}</div>
-                <div class="status">В РАБОТЕ</div>
-                <div class="start-time">С ${this.formatTime(record.date)}</div>
-            </div>
-        `).join('');
-    }
-
-    renderQueueList() {
-        const container = document.getElementById('queueDisplay');
-        const waiting = this.queueData.filter(record => 
-            record.status === 'wait' || record.status === 'welcome'
+        // Очередь ожидания
+        const waitingRecords = records.filter(record => 
+            record.status === 'wait'
         );
 
-        // Сортируем очередь
-        const sortedQueue = waiting.sort((a, b) => {
-            if (a.record && b.record) return new Date(a.record) - new Date(b.record);
-            if (a.record && !b.record) return -1;
-            if (!a.record && b.record) return 1;
-            return new Date(a.date) - new Date(b.date);
-        });
-
-        if (sortedQueue.length === 0) {
-            container.innerHTML = '<div class="empty-queue">ОЧЕРЕДЬ ПУСТА</div>';
-            return;
+        // Отображаем текущие в работе
+        if (inWorkRecords.length > 0) {
+            this.currentTickets.innerHTML = inWorkRecords.map(record => `
+                <div class="current-ticket">
+                    <div class="ticket-number-large">${record.ticketNumber}</div>
+                    <div class="car-number-large">${this.escapeHtml(record.title)}</div>
+                    <div class="status-large">${this.getStatusText(record.status)}</div>
+                </div>
+            `).join('');
+        } else {
+            this.currentTickets.innerHTML = '<div class="no-tickets">НЕТ ЗАПИСЕЙ</div>';
         }
 
-        container.innerHTML = sortedQueue.map((record, index) => `
-            <div class="ticket-item-large ${record.record ? 'appointment' : ''}">
-                <div class="ticket-number-medium">${this.formatTicketNumber(record)}</div>
-                <div class="position">${index + 1}</div>
-                <div class="car-number">${record.title}</div>
-                ${record.record ? `<div class="appointment-time">${this.formatTime(record.record)}</div>` : ''}
-            </div>
-        `).join('');
+        // Отображаем очередь
+        if (waitingRecords.length > 0) {
+            this.queueDisplay.innerHTML = waitingRecords.map((record, index) => `
+                <div class="queue-item-large">
+                    <div class="queue-position">${index + 1}</div>
+                    <div class="queue-ticket">${record.ticketNumber}</div>
+                    <div class="queue-car">${this.escapeHtml(record.title)}</div>
+                </div>
+            `).join('');
+        } else {
+            this.queueDisplay.innerHTML = '<div class="no-queue">ОЧЕРЕДЬ ПУСТА</div>';
+        }
     }
 
-    formatTicketNumber(record) {
-        const id = record.id.toString().slice(-3).padStart(3, '0');
-        return record.record ? `З${id}` : `О${id}`;
+    getStatusText(status) {
+        const statusMap = {
+            'wait': 'ОЖИДАНИЕ',
+            'welcome': 'ПРИНЯТ',
+            'in work': 'В РАБОТЕ',
+            'done': 'ЗАВЕРШЕН',
+            'cancel': 'ОТМЕНЕН'
+        };
+        return statusMap[status] || status;
     }
 
-    formatTime(dateTime) {
-        const date = new Date(dateTime);
-        return date.toLocaleTimeString('ru-RU', {
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    }
-
-    startAutoUpdate() {
-        this.updateInterval = setInterval(() => {
-            this.loadQueue();
-        }, 10000); // Обновление каждые 10 секунд
+    escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 }
 
-// Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', () => {
     new QueueDisplay();
 });

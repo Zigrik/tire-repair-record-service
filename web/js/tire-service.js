@@ -14,6 +14,10 @@ class TireService {
         this.ticketInfo = document.getElementById('ticketInfo');
         this.closeModalBtn = document.getElementById('closeModalBtn');
 
+        this.availableSlotsCache = {};
+        this.workStations = 3; // Количество рабочих постов
+        this.averageServiceTime = 40; // Среднее время обслуживания в минутах
+
         this.init();
     }
 
@@ -27,12 +31,8 @@ class TireService {
         this.preRecordCheckbox.addEventListener('change', () => this.togglePreRecord());
         this.getTicketBtn.addEventListener('click', () => this.getTicket());
         this.closeModalBtn.addEventListener('click', () => this.closeModal());
+        this.recordDateInput.addEventListener('focus', () => this.loadAvailableSlots());
 
-        // Устанавливаем минимальную дату для записи
-        const minDate = new Date();
-        minDate.setMinutes(minDate.getMinutes() + 30);
-        this.recordDateInput.min = minDate.toISOString().slice(0, 16);
-        
         console.log('TireService initialized');
     }
 
@@ -48,25 +48,80 @@ class TireService {
         });
     }
 
-    togglePreRecord() {
+    async togglePreRecord() {
         if (this.preRecordCheckbox.checked) {
             this.preRecordFields.style.display = 'block';
+            await this.loadAvailableSlots();
         } else {
             this.preRecordFields.style.display = 'none';
             this.recordDateInput.value = '';
         }
     }
 
+    async loadAvailableSlots() {
+        try {
+            const today = new Date().toISOString().split('T')[0];
+            const response = await axios.post('/api/GetAvailableSlots', { date: today });
+            const slots = response.data.slots || [];
+            
+            // Получаем текущую очередь для расчета времени
+            const queueResponse = await axios.get('/api/GetTodayRecords');
+            const waitingRecords = (queueResponse.data.records || []).filter(r => 
+                r.status === 'wait' && !r.record
+            );
+            
+            const availableSlots = this.calculateRealAvailableSlots(slots, waitingRecords.length);
+            this.updateDateTimeInput(availableSlots);
+            
+        } catch (error) {
+            console.error('Ошибка загрузки доступных слотов:', error);
+        }
+    }
+
+    calculateRealAvailableSlots(slots, waitingCount) {
+        const now = new Date();
+        const minStartTime = new Date(now.getTime() + this.calculateMinStartTime(waitingCount) * 60000);
+        
+        return slots.filter(slot => {
+            const slotTime = new Date(slot);
+            return slotTime >= minStartTime;
+        });
+    }
+
+    calculateMinStartTime(waitingCount) {
+        // Время начала = (количество в очереди * среднее время) / количество постов
+        return Math.ceil((waitingCount * this.averageServiceTime) / this.workStations);
+    }
+
+    updateDateTimeInput(availableSlots) {
+        // Создаем datalist с доступными слотами
+        let datalist = document.getElementById('availableSlotsList');
+        if (!datalist) {
+            datalist = document.createElement('datalist');
+            datalist.id = 'availableSlotsList';
+            document.body.appendChild(datalist);
+        }
+        
+        datalist.innerHTML = availableSlots.map(slot => {
+            const date = new Date(slot);
+            const value = date.toISOString().slice(0, 16);
+            const display = date.toLocaleString('ru-RU', {
+                day: '2-digit',
+                month: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            return `<option value="${value}">${display}</option>`;
+        }).join('');
+        
+        this.recordDateInput.setAttribute('list', 'availableSlotsList');
+        this.recordDateInput.min = new Date().toISOString().slice(0, 16);
+    }
+
     async loadQueue() {
         try {
-            console.log('Loading queue...');
             const response = await axios.get('/api/GetTodayRecords');
-            console.log('Queue response:', response.data);
-            
-            // Нормализуем поля - преобразуем заглавные в строчные
-            const records = this.normalizeRecords(response.data.records || []);
-            
-            console.log('Normalized records:', records);
+            const records = response.data.records || [];
             this.displayQueue(records);
         } catch (error) {
             console.error('Ошибка загрузки очереди:', error);
@@ -74,21 +129,7 @@ class TireService {
         }
     }
 
-    // Преобразуем поля из заглавных в строчные
-    normalizeRecords(records) {
-        return records.map(record => ({
-            id: record.ID || record.id,
-            date: record.Date || record.date,
-            title: record.Title || record.title,
-            record: record.Record || record.record,
-            comment: record.Comment || record.comment,
-            status: record.Status || record.status
-        }));
-    }
-
     displayQueue(records) {
-        console.log('Displaying records:', records);
-        
         // Фильтруем записи по статусам
         const inWorkRecords = records.filter(record => 
             record.status === 'in work' || record.status === 'welcome'
@@ -98,19 +139,13 @@ class TireService {
             record.status === 'wait'
         );
 
-        console.log('In work records:', inWorkRecords);
-        console.log('Waiting records:', waitingRecords);
-
         // Отображаем "В работе"
         if (inWorkRecords.length > 0) {
             this.inWorkList.innerHTML = inWorkRecords.map(record => `
                 <div class="queue-item in-work">
+                    <div class="ticket-number">${record.ticketNumber}</div>
                     <div class="car-number">${this.escapeHtml(record.title)}</div>
-                    <div class="record-info">
-                        <div class="record-time">${this.formatRecordTime(record.record)}</div>
-                        <div class="status">${this.getStatusText(record.status)}</div>
-                    </div>
-                    ${record.comment ? `<div class="comment">Комментарий: ${this.escapeHtml(record.comment)}</div>` : ''}
+                    <div class="status">${this.getStatusText(record.status)}</div>
                 </div>
             `).join('');
         } else {
@@ -121,32 +156,13 @@ class TireService {
         if (waitingRecords.length > 0) {
             this.queueList.innerHTML = waitingRecords.map((record, index) => `
                 <div class="queue-item waiting">
+                    <div class="ticket-number">${record.ticketNumber}</div>
                     <div class="car-number">${this.escapeHtml(record.title)}</div>
-                    <div class="record-info">
-                        <div class="record-time">${this.formatRecordTime(record.record)}</div>
-                        <div class="position">Позиция: #${index + 1}</div>
-                    </div>
-                    ${record.comment ? `<div class="comment">Комментарий: ${this.escapeHtml(record.comment)}</div>` : ''}
+                    <div class="position">#${index + 1}</div>
                 </div>
             `).join('');
         } else {
             this.queueList.innerHTML = '<div class="empty-message">Очередь пуста</div>';
-        }
-    }
-
-    formatRecordTime(recordTime) {
-        if (!recordTime) return 'Текущая очередь';
-        
-        try {
-            const date = new Date(recordTime);
-            return `Запись на: ${date.toLocaleString('ru-RU', {
-                day: '2-digit',
-                month: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit'
-            })}`;
-        } catch (e) {
-            return 'Текущая очередь';
         }
     }
 
@@ -187,12 +203,16 @@ class TireService {
                 requestData.record = new Date(recordDate).toISOString();
             }
 
-            console.log('Sending request:', requestData);
             const response = await axios.post('/api/AddRecord', requestData);
-            console.log('Response received:', response.data);
             
             if (response.data.message === 'Record added successfully') {
-                this.showSuccessModal(carNumber, isPreRecord, recordDate);
+                // Получаем ID новой записи для отображения номера талона
+                const queueResponse = await axios.get('/api/GetTodayRecords');
+                const newRecord = queueResponse.data.records.find(r => 
+                    r.title === carNumber && r.status === 'wait'
+                );
+                
+                this.showSuccessModal(newRecord?.ticketNumber || carNumber, isPreRecord, recordDate);
                 this.clearForm();
                 this.loadQueue();
             } else {
@@ -210,8 +230,8 @@ class TireService {
         }
     }
 
-    showSuccessModal(carNumber, isPreRecord, recordDate) {
-        this.ticketNumber.textContent = `Автомобиль: ${carNumber}`;
+    showSuccessModal(ticketNumber, isPreRecord, recordDate) {
+        this.ticketNumber.textContent = `Талон: ${ticketNumber}`;
         
         if (isPreRecord && recordDate) {
             const date = new Date(recordDate);
@@ -248,7 +268,6 @@ class TireService {
     }
 }
 
-// Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', () => {
     new TireService();
 });
